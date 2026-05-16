@@ -1,25 +1,23 @@
 import discord
-from discord import app_commands
-from discord.ext import commands, tasks
-import random
-import asyncio
+from discord.ext import commands
 from datetime import datetime, timedelta
+import random
 
 TOKEN = "MTUwNTE2NzE1MTYxNzgwMjI3Mg.GTJ84f.FLCRK4AGQMRAXPEPEliQsSqVuNyDjC9erSjL7I"  # <- wklej tutaj swój token
 GUILD_ID = 1495457163009851412  # <- wklej ID swojego serwera
-DROP_CHANNEL_ID = 1504474153846051007 # <- wklej ID kanału drop
+DROP_CHANNEL_ID = 1504474153846051007  # <- wklej ID kanału drop
 
 intents = discord.Intents.default()
 intents.message_content = True
 
 bot = commands.Bot(command_prefix="do!", intents=intents)
 
-# Słownik cooldownów użytkowników
+# ------------------ COOLDOWN ------------------
 cooldowns = {}
-COOLDOWN_HOURS = 4  # 4 godziny cooldown
+COOLDOWN_HOURS = 4
 COOLDOWN = timedelta(hours=COOLDOWN_HOURS)
 
-
+# ------------------ READY ------------------
 @bot.event
 async def on_ready():
     print(f'Zalogowano jako {bot.user}')
@@ -29,20 +27,18 @@ async def on_ready():
     except Exception as e:
         print(e)
 
-
-# ---------------- DROP COMMAND ----------------
-@bot.tree.command(name="drop", description="Drop normalny", guild=discord.Object(id=GUILD_ID))
+# ------------------ DROP COMMAND ------------------
+@bot.tree.command(name="dropzwykly", description="Drop normalny", guild=discord.Object(id=GUILD_ID))
 async def drop(interaction: discord.Interaction):
     if interaction.channel.id != DROP_CHANNEL_ID:
         await interaction.response.send_message(
-            f"> `❌` Dropu możesz użyć tylko na <#{DROP_CHANNEL_ID}>! [Sprawdziany & Kartkówki 4U DROPIK :D]", ephemeral=True
+            f"> `❌` Dropu możesz użyć tylko na <#{DROP_CHANNEL_ID}>!", ephemeral=True
         )
         return
 
     user_id = interaction.user.id
     now = datetime.now()
 
-    # Sprawdzenie cooldownu
     if user_id in cooldowns:
         expiration = cooldowns[user_id] + COOLDOWN
         if now < expiration:
@@ -58,7 +54,6 @@ async def drop(interaction: discord.Interaction):
     cooldowns[user_id] = now
     await interaction.response.defer()
 
-    # Losowanie nagrody
     roll = random.random() * 100
     reward_text = None
     is_win = False
@@ -75,13 +70,13 @@ async def drop(interaction: discord.Interaction):
 
     if is_win:
         embed = discord.Embed(
-            title="🏆︲WYGRANA × Sprawdziany & Kartówki 4U Dropik :DD",
+            title="🏆︲WYGRANA × Dropik",
             description=f"> Gratulacje wygrałeś zniżke: `{reward_text}`",
             color=discord.Color.green()
         )
     else:
         embed = discord.Embed(
-            title="📛︲PRZEGRANA × Sprawdziany & Kartkówki 4U",
+            title="📛︲PRZEGRANA × Dropik",
             description="> Niestety nic nie **wygrałeś!**",
             color=discord.Color.red()
         )
@@ -89,27 +84,19 @@ async def drop(interaction: discord.Interaction):
     embed.set_image(url="https://i.imgur.com/QoD8aA5.png")
     await interaction.followup.send(content=f"<@{user_id}>", embed=embed)
 
-
-# ---------------- EMBED CREATOR MODAL ----------------
+# ------------------ EMBED CREATOR MODAL ------------------
 class EmbedCreatorModal(discord.ui.Modal, title="Tworzenie embeda"):
     def __init__(self):
         super().__init__()
-
-        # Podstawowe pola
         self.add_item(discord.ui.TextInput(label="Tytuł embeda", custom_id="embedTitle", style=discord.TextStyle.short, required=True))
         self.add_item(discord.ui.TextInput(label="Opis embeda", custom_id="embedDesc", style=discord.TextStyle.paragraph, required=True))
         self.add_item(discord.ui.TextInput(label="Kolor HEX (#rrggbb)", custom_id="embedColor", style=discord.TextStyle.short, required=True))
         self.add_item(discord.ui.TextInput(label="Stopka (opcjonalnie)", custom_id="embedFooter", style=discord.TextStyle.short, required=False))
-
-        # 4 pola opcjonalne
-        for i in range(1, 5):
+        for i in range(1,5):
             self.add_item(discord.ui.TextInput(label=f"Pole {i} - Tytuł (opcjonalnie)", custom_id=f"field{i}title", style=discord.TextStyle.short, required=False))
             self.add_item(discord.ui.TextInput(label=f"Pole {i} - Opis (opcjonalnie)", custom_id=f"field{i}desc", style=discord.TextStyle.paragraph, required=False))
 
     async def on_submit(self, interaction: discord.Interaction):
-        # Defer interakcji, żeby Discord nie zgłaszał "Aplikacja nie reaguje"
-        await interaction.response.defer(ephemeral=True)
-
         title = self.children[0].value
         description = self.children[1].value
         color_hex = self.children[2].value
@@ -124,22 +111,18 @@ class EmbedCreatorModal(discord.ui.Modal, title="Tworzenie embeda"):
         if footer:
             embed.set_footer(text=footer)
 
-        # Dodawanie pól
         for i in range(1,5):
             field_title = self.children[3 + (i-1)*2 + 1].value
             field_desc = self.children[3 + (i-1)*2 + 2].value
             if field_title or field_desc:
                 embed.add_field(name=field_title if field_title else "\u200b", value=field_desc if field_desc else "\u200b", inline=False)
 
-        # Wysyłamy embed anonimowo
-        await interaction.followup.send(embed=embed, ephemeral=False)
-        # Wiadomość prywatna dla użytkownika
-        await interaction.followup.send("✅ Pomyślnie wysłano embed", ephemeral=True)
+        # Wysyłamy wszystko w jednej wiadomości - stabilnie
+        await interaction.response.send_message("✅ Pomyślnie wysłano embed!", embed=embed, ephemeral=False)
 
-
-@bot.tree.command(name="embed-creator", description="Tworzenie embeda", guild=discord.Object(id=GUILD_ID))
+# ------------------ SLASH COMMAND ------------------
+@bot.tree.command(name="embed", description="Tworzenie embeda", guild=discord.Object(id=GUILD_ID))
 async def embed_creator(interaction: discord.Interaction):
     await interaction.response.send_modal(EmbedCreatorModal())
-
 
 bot.run(TOKEN)
