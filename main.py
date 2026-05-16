@@ -90,12 +90,12 @@ async def drop(interaction: discord.Interaction):
     await interaction.followup.send(content=f"<@{user_id}>", embed=embed)
 
 
-# ---------------- NOWY EMBED CREATOR MODAL ----------------
+# ---------------- EMBED CREATOR MODAL ----------------
 class EmbedCreatorModal(discord.ui.Modal, title="Tworzenie embeda"):
     def __init__(self):
         super().__init__()
 
-        # Podstawowe
+        # Podstawowe pola
         self.add_item(discord.ui.TextInput(label="Tytuł embeda", custom_id="embedTitle", style=discord.TextStyle.short, required=True))
         self.add_item(discord.ui.TextInput(label="Opis embeda", custom_id="embedDesc", style=discord.TextStyle.paragraph, required=True))
         self.add_item(discord.ui.TextInput(label="Kolor HEX (#rrggbb)", custom_id="embedColor", style=discord.TextStyle.short, required=True))
@@ -107,16 +107,18 @@ class EmbedCreatorModal(discord.ui.Modal, title="Tworzenie embeda"):
             self.add_item(discord.ui.TextInput(label=f"Pole {i} - Opis (opcjonalnie)", custom_id=f"field{i}desc", style=discord.TextStyle.paragraph, required=False))
 
     async def on_submit(self, interaction: discord.Interaction):
+        # Defer interakcji, żeby Discord nie zgłaszał "Aplikacja nie reaguje"
+        await interaction.response.defer(ephemeral=True)
+
         title = self.children[0].value
         description = self.children[1].value
         color_hex = self.children[2].value
         footer = self.children[3].value
 
-        # Konwersja koloru
         try:
             color = int(color_hex.replace("#",""), 16)
         except:
-            color = 0xFFFFFF  # domyślny biały
+            color = 0xFFFFFF
 
         embed = discord.Embed(title=title, description=description, color=color)
         if footer:
@@ -129,11 +131,10 @@ class EmbedCreatorModal(discord.ui.Modal, title="Tworzenie embeda"):
             if field_title or field_desc:
                 embed.add_field(name=field_title if field_title else "\u200b", value=field_desc if field_desc else "\u200b", inline=False)
 
-        # Najpierw ephemerala wiadomość dla użytkownika
-        await interaction.response.send_message("✅ Pomyślnie wysłano embed", ephemeral=True)
-
-        # Wysyłamy embed anonimowo na tym samym kanale używając followup
+        # Wysyłamy embed anonimowo
         await interaction.followup.send(embed=embed, ephemeral=False)
+        # Wiadomość prywatna dla użytkownika
+        await interaction.followup.send("✅ Pomyślnie wysłano embed", ephemeral=True)
 
 
 @bot.tree.command(name="embed-creator", description="Tworzenie embeda", guild=discord.Object(id=GUILD_ID))
