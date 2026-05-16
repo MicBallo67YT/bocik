@@ -129,11 +129,11 @@ class EmbedCreatorModal(discord.ui.Modal, title="Tworzenie embeda"):
             if field_title or field_desc:
                 embed.add_field(name=field_title if field_title else "\u200b", value=field_desc if field_desc else "\u200b", inline=False)
 
-        # Odpowiedź prywatna dla użytkownika
+        # Najpierw ephemerala wiadomość dla użytkownika
         await interaction.response.send_message("✅ Pomyślnie wysłano embed", ephemeral=True)
 
-        # Wysyłamy embed anonimowo na kanale
-        await interaction.channel.send(embed=embed)
+        # Wysyłamy embed anonimowo na tym samym kanale używając followup
+        await interaction.followup.send(embed=embed, ephemeral=False)
 
 
 @bot.tree.command(name="embed-creator", description="Tworzenie embeda", guild=discord.Object(id=GUILD_ID))
