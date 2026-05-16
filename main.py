@@ -72,13 +72,13 @@ async def drop(interaction: discord.Interaction):
 
     if is_win:
         embed = discord.Embed(
-            title="🏆︲WYGRANA × Drop Sprawdziany & Kartkówki 4U",
+            title="🏆︲WYGRANA × Dropik",
             description=f"> Gratulacje wygrałeś zniżke: `{reward_text}`",
             color=discord.Color.green()
         )
     else:
         embed = discord.Embed(
-            title="📛︲PRZEGRANA × Drop Sprawdziany & Kartkówki 4U",
+            title="📛︲PRZEGRANA × Dropik",
             description="> Niestety nic nie **wygrałeś!**",
             color=discord.Color.red()
         )
@@ -90,7 +90,6 @@ async def drop(interaction: discord.Interaction):
 class EmbedCreatorModal(discord.ui.Modal, title="Tworzenie embeda"):
     def __init__(self):
         super().__init__()
-        # Dokładnie 5 pól - limit Discorda
         self.add_item(discord.ui.TextInput(label="Tytuł embeda", style=discord.TextStyle.short, required=True))
         self.add_item(discord.ui.TextInput(label="Opis embeda", style=discord.TextStyle.paragraph, required=True))
         self.add_item(discord.ui.TextInput(label="Kolor HEX (#rrggbb)", style=discord.TextStyle.short, required=True))
@@ -103,7 +102,7 @@ class EmbedCreatorModal(discord.ui.Modal, title="Tworzenie embeda"):
         ))
 
     async def on_submit(self, interaction: discord.Interaction):
-        await interaction.response.defer()
+        await interaction.response.defer(ephemeral=True)   # Ukryte dla innych
 
         try:
             title = self.children[0].value
@@ -126,16 +125,21 @@ class EmbedCreatorModal(discord.ui.Modal, title="Tworzenie embeda"):
                 lines = extra.split("\n", 1)
                 field_name = lines[0].strip() if lines else "\u200b"
                 field_value = lines[1].strip() if len(lines) > 1 else "\u200b"
-                embed.add_field(name=field_name or "\u200b", value=field_value or "\u200b", inline=False)
+                if field_name or field_value:
+                    embed.add_field(name=field_name or "\u200b", value=field_value or "\u200b", inline=False)
 
-            await interaction.followup.send("✅ **Embed wysłany pomyślnie!**", embed=embed)
+            # Embed widoczny dla wszystkich
+            await interaction.followup.send(embed=embed, ephemeral=False)
+            
+            # Potwierdzenie tylko dla użytkownika
+            await interaction.followup.send("✅ **Embed został pomyślnie wysłany!**", ephemeral=True)
 
         except Exception as e:
             print(f"[Embed Error] {e}")
             await interaction.followup.send(f"❌ Błąd: {e}", ephemeral=True)
 
 # ------------------ SLASH COMMAND ------------------
-@bot.tree.command(name="embed", description="Tworzenie embeda", guild=discord.Object(id=GUILD_ID))
+@bot.tree.command(name="embed-creator", description="Tworzenie embeda", guild=discord.Object(id=GUILD_ID))
 async def embed_creator(interaction: discord.Interaction):
     await interaction.response.send_modal(EmbedCreatorModal())
 
