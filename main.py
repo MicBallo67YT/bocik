@@ -16,7 +16,7 @@ bot = commands.Bot(command_prefix="do!", intents=intents)
 
 # Słownik cooldownów użytkowników
 cooldowns = {}
-COOLDOWN_HOURS = 4  # 5 godzin cooldown
+COOLDOWN_HOURS = 4  # 4 godziny cooldown
 COOLDOWN = timedelta(hours=COOLDOWN_HOURS)
 
 
@@ -90,29 +90,53 @@ async def drop(interaction: discord.Interaction):
     await interaction.followup.send(content=f"<@{user_id}>", embed=embed)
 
 
-# ---------------- EMBED CREATOR MODAL ----------------
-class EmbedCreatorModal(discord.ui.Modal, title="Ostatni krok »"):
+# ---------------- NOWY EMBED CREATOR MODAL ----------------
+class EmbedCreatorModal(discord.ui.Modal, title="Tworzenie embeda"):
     def __init__(self):
         super().__init__()
-        self.add_item(discord.ui.TextInput(label="Tytuł", custom_id="embedTitle", style=discord.TextStyle.short, required=True))
-        self.add_item(discord.ui.TextInput(label="Opis", custom_id="embedDescription", style=discord.TextStyle.paragraph, required=True))
-        self.add_item(discord.ui.TextInput(label="Kolor HEX (np. #ff0000)", custom_id="embedColor", style=discord.TextStyle.short, required=True))
+
+        # Podstawowe
+        self.add_item(discord.ui.TextInput(label="Tytuł embeda", custom_id="embedTitle", style=discord.TextStyle.short, required=True))
+        self.add_item(discord.ui.TextInput(label="Opis embeda", custom_id="embedDesc", style=discord.TextStyle.paragraph, required=True))
+        self.add_item(discord.ui.TextInput(label="Kolor HEX (#rrggbb)", custom_id="embedColor", style=discord.TextStyle.short, required=True))
+        self.add_item(discord.ui.TextInput(label="Stopka (opcjonalnie)", custom_id="embedFooter", style=discord.TextStyle.short, required=False))
+
+        # 4 pola opcjonalne
+        for i in range(1, 5):
+            self.add_item(discord.ui.TextInput(label=f"Pole {i} - Tytuł (opcjonalnie)", custom_id=f"field{i}title", style=discord.TextStyle.short, required=False))
+            self.add_item(discord.ui.TextInput(label=f"Pole {i} - Opis (opcjonalnie)", custom_id=f"field{i}desc", style=discord.TextStyle.paragraph, required=False))
 
     async def on_submit(self, interaction: discord.Interaction):
         title = self.children[0].value
         description = self.children[1].value
         color_hex = self.children[2].value
+        footer = self.children[3].value
 
+        # Konwersja koloru
         try:
-            color = int(color_hex.replace("#", ""), 16)
-        except ValueError:
-            color = 0xFFFFFF
+            color = int(color_hex.replace("#",""), 16)
+        except:
+            color = 0xFFFFFF  # domyślny biały
 
         embed = discord.Embed(title=title, description=description, color=color)
-        await interaction.response.send_message(embed=embed)
+        if footer:
+            embed.set_footer(text=footer)
+
+        # Dodawanie pól
+        for i in range(1,5):
+            field_title = self.children[3 + (i-1)*2 + 1].value
+            field_desc = self.children[3 + (i-1)*2 + 2].value
+            if field_title or field_desc:
+                embed.add_field(name=field_title if field_title else "\u200b", value=field_desc if field_desc else "\u200b", inline=False)
+
+        # Odpowiedź prywatna dla użytkownika
+        await interaction.response.send_message("✅ Pomyślnie wysłano embed", ephemeral=True)
+
+        # Wysyłamy embed anonimowo na kanale
+        await interaction.channel.send(embed=embed)
 
 
-@bot.tree.command(name="embed-creator", description="Otwiera modal do stworzenia embeda", guild=discord.Object(id=GUILD_ID))
+@bot.tree.command(name="embed-creator", description="Tworzenie embeda", guild=discord.Object(id=GUILD_ID))
 async def embed_creator(interaction: discord.Interaction):
     await interaction.response.send_modal(EmbedCreatorModal())
 
