@@ -5,18 +5,18 @@ import random
 import asyncio
 from datetime import datetime, timedelta
 
-TOKEN = "TWÓJ_TOKEN"  # <- wklej tutaj swój token
-GUILD_ID = 123456789012345678  # <- wklej ID swojego serwera
-DROP_CHANNEL_ID = 123456789012345678  # <- wklej ID kanału drop
+TOKEN = "MTUwNTE2NzE1MTYxNzgwMjI3Mg.GTJ84f.FLCRK4AGQMRAXPEPEliQsSqVuNyDjC9erSjL7I"  # <- wklej tutaj swój token
+GUILD_ID = 1495457163009851412  # <- wklej ID swojego serwera
+DROP_CHANNEL_ID = 1504474153846051007 # <- wklej ID kanału drop
 
 intents = discord.Intents.default()
 intents.message_content = True
 
-bot = commands.Bot(command_prefix="!", intents=intents)
+bot = commands.Bot(command_prefix="do!", intents=intents)
 
 # Słownik cooldownów użytkowników
 cooldowns = {}
-COOLDOWN_HOURS = 5  # 5 godzin cooldown
+COOLDOWN_HOURS = 4  # 5 godzin cooldown
 COOLDOWN = timedelta(hours=COOLDOWN_HOURS)
 
 
@@ -31,11 +31,11 @@ async def on_ready():
 
 
 # ---------------- DROP COMMAND ----------------
-@bot.tree.command(name="drop", description="Drop zwykły", guild=discord.Object(id=GUILD_ID))
+@bot.tree.command(name="drop", description="Drop normalny", guild=discord.Object(id=GUILD_ID))
 async def drop(interaction: discord.Interaction):
     if interaction.channel.id != DROP_CHANNEL_ID:
         await interaction.response.send_message(
-            f"> `❌` Dropu możesz użyć tylko na <#{DROP_CHANNEL_ID}>!", ephemeral=True
+            f"> `❌` Dropu możesz użyć tylko na <#{DROP_CHANNEL_ID}>! [Sprawdziany & Kartkówki 4U DROPIK :D]", ephemeral=True
         )
         return
 
@@ -50,7 +50,7 @@ async def drop(interaction: discord.Interaction):
             hours, remainder = divmod(int(remaining.total_seconds()), 3600)
             minutes, seconds = divmod(remainder, 60)
             await interaction.response.send_message(
-                f"> `⏳` Musisz poczekać jeszcze **{hours}h {minutes}m {seconds}s** przed ponownym użyciem komendy!",
+                f"> `⏳` Musisz poczekać jeszcze **{hours}h {minutes}m {seconds}s** przed ponownym użyciem Dropu.",
                 ephemeral=True
             )
             return
@@ -67,26 +67,26 @@ async def drop(interaction: discord.Interaction):
         reward_text = "20%"
         is_win = True
     elif roll < 5:
-        reward_text = "10%"
+        reward_text = "15%"
         is_win = True
     elif roll < 7:
-        reward_text = "5%"
+        reward_text = "10%"
         is_win = True
 
     if is_win:
         embed = discord.Embed(
-            title="🏆︲WYGRANA × PRIMECODE",
+            title="🏆︲WYGRANA × Sprawdziany & Kartówki 4U Dropik :DD",
             description=f"> Gratulacje wygrałeś zniżke: `{reward_text}`",
             color=discord.Color.green()
         )
     else:
         embed = discord.Embed(
-            title="📛︲PRZEGRANA × PRIMECODE",
+            title="📛︲PRZEGRANA × Sprawdziany & Kartkówki 4U",
             description="> Niestety nic nie **wygrałeś!**",
             color=discord.Color.red()
         )
 
-    embed.set_image(url="https://i.imgur.com/Fl5oGsE.png")
+    embed.set_image(url="https://i.imgur.com/QoD8aA5.png")
     await interaction.followup.send(content=f"<@{user_id}>", embed=embed)
 
 
