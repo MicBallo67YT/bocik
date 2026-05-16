@@ -59,17 +59,17 @@ async def drop(interaction: discord.Interaction):
     cooldowns[user_id] = now
     await interaction.response.defer()
 
-    roll = random.random() * 100
+    roll = random.random() * 30
     reward_text = None
     is_win = False
 
-    if roll < 1:
+    if roll < 2:
         reward_text = "20%"
         is_win = True
     elif roll < 5:
         reward_text = "15%"
         is_win = True
-    elif roll < 7:
+    elif roll < 8:
         reward_text = "10%"
         is_win = True
 
