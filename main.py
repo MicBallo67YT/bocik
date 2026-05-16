@@ -17,6 +17,9 @@ cooldowns = {}
 COOLDOWN_HOURS = 4
 COOLDOWN = timedelta(hours=COOLDOWN_HOURS)
 
+# ------------------ ZAPISANE EMBEDY ------------------
+saved_embeds = {}   # {user_id: discord.Embed}
+
 # ------------------ READY ------------------
 @bot.event
 async def on_ready():
@@ -72,13 +75,13 @@ async def drop(interaction: discord.Interaction):
 
     if is_win:
         embed = discord.Embed(
-            title="🏆︲WYGRANA × Dropik",
+            title="🏆︲WYGRANA × Drop | Sprawdziany & Kartkówki 4U",
             description=f"> Gratulacje wygrałeś zniżke: `{reward_text}`",
             color=discord.Color.green()
         )
     else:
         embed = discord.Embed(
-            title="📛︲PRZEGRANA × Dropik",
+            title="📛︲PRZEGRANA × Drop | Sprawdziany & Kartkówki 4U",
             description="> Niestety nic nie **wygrałeś!**",
             color=discord.Color.red()
         )
@@ -102,7 +105,7 @@ class EmbedCreatorModal(discord.ui.Modal, title="Tworzenie embeda"):
         ))
 
     async def on_submit(self, interaction: discord.Interaction):
-        await interaction.response.defer(ephemeral=True)   # Ukryte dla innych
+        await interaction.response.defer(ephemeral=True)
 
         try:
             title = self.children[0].value
@@ -128,19 +131,43 @@ class EmbedCreatorModal(discord.ui.Modal, title="Tworzenie embeda"):
                 if field_name or field_value:
                     embed.add_field(name=field_name or "\u200b", value=field_value or "\u200b", inline=False)
 
-            # Embed widoczny dla wszystkich
-            await interaction.followup.send(embed=embed, ephemeral=False)
-            
-            # Potwierdzenie tylko dla użytkownika
-            await interaction.followup.send("✅ **Embed został pomyślnie wysłany!**", ephemeral=True)
+            saved_embeds[interaction.user.id] = embed
+
+            await interaction.followup.send(
+                "✅ **Embed został zapisany!**\nWpisz `do!send` na kanale, na którym chcesz go wysłać.", 
+                ephemeral=True
+            )
 
         except Exception as e:
             print(f"[Embed Error] {e}")
             await interaction.followup.send(f"❌ Błąd: {e}", ephemeral=True)
 
 # ------------------ SLASH COMMAND ------------------
-@bot.tree.command(name="embed-creator", description="Tworzenie embeda", guild=discord.Object(id=GUILD_ID))
+@bot.tree.command(name="embed", description="Tworzenie embeda", guild=discord.Object(id=GUILD_ID))
 async def embed_creator(interaction: discord.Interaction):
     await interaction.response.send_modal(EmbedCreatorModal())
+
+# ------------------ PREFIX COMMAND - SEND ------------------
+@bot.command(name="send")
+async def send_embed(ctx):
+    user_id = ctx.author.id
+
+    if user_id not in saved_embeds:
+        await ctx.send("❌ Nie masz zapisanych embedów. Użyj `/embed` najpierw.", delete_after=15)
+        return
+
+    embed = saved_embeds[user_id]
+    
+    # Wysyła na kanale, na którym użyto do!send
+    await ctx.send(embed=embed)
+    
+    # Usuwamy z bazy po wysłaniu
+    del saved_embeds[user_id]
+
+    # Opcjonalnie usuwamy wiadomość z komendą
+    try:
+        await ctx.message.delete()
+    except:
+        pass
 
 bot.run(TOKEN)
