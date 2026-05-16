@@ -3,9 +3,9 @@ from discord.ext import commands
 from datetime import datetime, timedelta
 import random
 
-TOKEN = "MTUwNTE2NzE1MTYxNzgwMjI3Mg.GTJ84f.FLCRK4AGQMRAXPEPEliQsSqVuNyDjC9erSjL7I" # <- wklej tutaj swój token
-GUILD_ID = 1495457163009851412 # <- wklej ID swojego serwera
-DROP_CHANNEL_ID = 1504474153846051007 # <- wklej ID kanału drop
+TOKEN = "MTUwNTE2NzE1MTYxNzgwMjI3Mg.GTJ84f.FLCRK4AGQMRAXPEPEliQsSqVuNyDjC9erSjL7I"  # <- wklej tutaj swój token
+GUILD_ID = 1495457163009851412  # <- wklej ID swojego serwera
+DROP_CHANNEL_ID = 1504474153846051007  # <- wklej ID kanału drop
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -39,12 +39,9 @@ async def drop(interaction: discord.Interaction):
     user_id = interaction.user.id
     now = datetime.now()
 
-    # Czyszczenie cooldownu jeśli minął
     if user_id in cooldowns:
         expiration = cooldowns[user_id] + COOLDOWN
-        if now >= expiration:
-            del cooldowns[user_id]  # ← USUWANIE WYGAŚNIĘTEGO COOLDOWNU
-        else:
+        if now < expiration:
             remaining = expiration - now
             hours, remainder = divmod(int(remaining.total_seconds()), 3600)
             minutes, seconds = divmod(remainder, 60)
@@ -73,13 +70,13 @@ async def drop(interaction: discord.Interaction):
 
     if is_win:
         embed = discord.Embed(
-            title="🏆︲WYGRANA × Sprawdziany & Kartkówki 4U Drop :DD",
+            title="🏆︲WYGRANA × Drop Sprawdziany & Kartkówki 4U",
             description=f"> Gratulacje wygrałeś zniżke: `{reward_text}`",
             color=discord.Color.green()
         )
     else:
         embed = discord.Embed(
-            title="📛︲PRZEGRANA × Sprawdziany & Kartkówki 4U Drop",
+            title="📛︲PRZEGRANA × Drop Sprawdziany & Kartkówki 4U",
             description="> Niestety nic nie **wygrałeś!**",
             color=discord.Color.red()
         )
@@ -114,15 +111,13 @@ class EmbedCreatorModal(discord.ui.Modal, title="Tworzenie embeda"):
         if footer:
             embed.set_footer(text=footer)
 
-        # Poprawione indeksy
         for i in range(1,5):
-            field_title = self.children[4 + (i-1)*2].value
-            field_desc = self.children[5 + (i-1)*2].value
+            field_title = self.children[3 + (i-1)*2 + 1].value
+            field_desc = self.children[3 + (i-1)*2 + 2].value
             if field_title or field_desc:
-                embed.add_field(name=field_title if field_title else "\u200b", 
-                              value=field_desc if field_desc else "\u200b", 
-                              inline=False)
+                embed.add_field(name=field_title if field_title else "\u200b", value=field_desc if field_desc else "\u200b", inline=False)
 
+        # Wysyłamy wszystko w jednej wiadomości - stabilnie
         await interaction.response.send_message("✅ Pomyślnie wysłano embed!", embed=embed, ephemeral=False)
 
 # ------------------ SLASH COMMAND ------------------
