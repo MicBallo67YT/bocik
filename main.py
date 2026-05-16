@@ -3,9 +3,9 @@ from discord.ext import commands
 from datetime import datetime, timedelta
 import random
 
-TOKEN = "MTUwNTE2NzE1MTYxNzgwMjI3Mg.GTJ84f.FLCRK4AGQMRAXPEPEliQsSqVuNyDjC9erSjL7I"  # <- wklej tutaj swój token
-GUILD_ID = 1495457163009851412  # <- wklej ID swojego serwera
-DROP_CHANNEL_ID = 1504474153846051007  # <- wklej ID kanału drop
+TOKEN = "MTUwNTE2NzE1MTYxNzgwMjI3Mg.GTJ84f.FLCRK4AGQMRAXPEPEliQsSqVuNyDjC9erSjL7I" 
+GUILD_ID = 1495457163009851412 
+DROP_CHANNEL_ID = 1504474153846051007 
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -41,7 +41,9 @@ async def drop(interaction: discord.Interaction):
 
     if user_id in cooldowns:
         expiration = cooldowns[user_id] + COOLDOWN
-        if now < expiration:
+        if now >= expiration:
+            del cooldowns[user_id]
+        else:
             remaining = expiration - now
             hours, remainder = divmod(int(remaining.total_seconds()), 3600)
             minutes, seconds = divmod(remainder, 60)
@@ -88,37 +90,49 @@ async def drop(interaction: discord.Interaction):
 class EmbedCreatorModal(discord.ui.Modal, title="Tworzenie embeda"):
     def __init__(self):
         super().__init__()
-        self.add_item(discord.ui.TextInput(label="Tytuł embeda", custom_id="embedTitle", style=discord.TextStyle.short, required=True))
-        self.add_item(discord.ui.TextInput(label="Opis embeda", custom_id="embedDesc", style=discord.TextStyle.paragraph, required=True))
-        self.add_item(discord.ui.TextInput(label="Kolor HEX (#rrggbb)", custom_id="embedColor", style=discord.TextStyle.short, required=True))
-        self.add_item(discord.ui.TextInput(label="Stopka (opcjonalnie)", custom_id="embedFooter", style=discord.TextStyle.short, required=False))
-        for i in range(1,5):
-            self.add_item(discord.ui.TextInput(label=f"Pole {i} - Tytuł (opcjonalnie)", custom_id=f"field{i}title", style=discord.TextStyle.short, required=False))
-            self.add_item(discord.ui.TextInput(label=f"Pole {i} - Opis (opcjonalnie)", custom_id=f"field{i}desc", style=discord.TextStyle.paragraph, required=False))
+        # Dokładnie 5 pól - limit Discorda
+        self.add_item(discord.ui.TextInput(label="Tytuł embeda", style=discord.TextStyle.short, required=True))
+        self.add_item(discord.ui.TextInput(label="Opis embeda", style=discord.TextStyle.paragraph, required=True))
+        self.add_item(discord.ui.TextInput(label="Kolor HEX (#rrggbb)", style=discord.TextStyle.short, required=True))
+        self.add_item(discord.ui.TextInput(label="Stopka (opcjonalnie)", style=discord.TextStyle.short, required=False))
+        self.add_item(discord.ui.TextInput(
+            label="Dodatkowe pole (Tytuł + Opis)", 
+            style=discord.TextStyle.paragraph, 
+            required=False,
+            placeholder="Pierwsza linia = tytuł pola\nKolejne linie = opis pola"
+        ))
 
     async def on_submit(self, interaction: discord.Interaction):
-        title = self.children[0].value
-        description = self.children[1].value
-        color_hex = self.children[2].value
-        footer = self.children[3].value
+        await interaction.response.defer()
 
         try:
-            color = int(color_hex.replace("#",""), 16)
-        except:
-            color = 0xFFFFFF
+            title = self.children[0].value
+            description = self.children[1].value
+            color_hex = self.children[2].value
+            footer = self.children[3].value.strip() if self.children[3].value else None
+            extra = self.children[4].value.strip() if self.children[4].value else None
 
-        embed = discord.Embed(title=title, description=description, color=color)
-        if footer:
-            embed.set_footer(text=footer)
+            try:
+                color = int(color_hex.replace("#", ""), 16)
+            except:
+                color = 0xFFFFFF
 
-        for i in range(1,5):
-            field_title = self.children[3 + (i-1)*2 + 1].value
-            field_desc = self.children[3 + (i-1)*2 + 2].value
-            if field_title or field_desc:
-                embed.add_field(name=field_title if field_title else "\u200b", value=field_desc if field_desc else "\u200b", inline=False)
+            embed = discord.Embed(title=title, description=description, color=color)
+            
+            if footer:
+                embed.set_footer(text=footer)
 
-        # Wysyłamy wszystko w jednej wiadomości - stabilnie
-        await interaction.response.send_message("✅ Pomyślnie wysłano embed!", embed=embed, ephemeral=False)
+            if extra:
+                lines = extra.split("\n", 1)
+                field_name = lines[0].strip() if lines else "\u200b"
+                field_value = lines[1].strip() if len(lines) > 1 else "\u200b"
+                embed.add_field(name=field_name or "\u200b", value=field_value or "\u200b", inline=False)
+
+            await interaction.followup.send("✅ **Embed wysłany pomyślnie!**", embed=embed)
+
+        except Exception as e:
+            print(f"[Embed Error] {e}")
+            await interaction.followup.send(f"❌ Błąd: {e}", ephemeral=True)
 
 # ------------------ SLASH COMMAND ------------------
 @bot.tree.command(name="embed", description="Tworzenie embeda", guild=discord.Object(id=GUILD_ID))
