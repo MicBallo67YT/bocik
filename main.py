@@ -64,25 +64,25 @@ async def drop(interaction: discord.Interaction):
     is_win = False
 
     if roll < 2:
-        reward_text = "20%"
+        reward_text = "Darmowy Sprawdzian/Kartkówka"
         is_win = True
     elif roll < 5:
-        reward_text = "15%"
+        reward_text = "15% Zniżki na wszystko (poza pojedyńczym sprawdzianem)"
         is_win = True
     elif roll < 8:
-        reward_text = "10%"
+        reward_text = "30% taniej na konto publiczne wybranego wydawnictwa"
         is_win = True
 
     if is_win:
         embed = discord.Embed(
             title="🏆︲WYGRANA × Drop | Sprawdziany & Kartkówki 4U",
-            description=f"> Gratulacje wygrałeś zniżke: `{reward_text}`",
+            description=f"> Gratulacje wygrałeś/aś produkt: `{reward_text}`, lecz pamiętaj iż jest ona JEDNORAZOWA.",
             color=discord.Color.green()
         )
     else:
         embed = discord.Embed(
             title="📛︲PRZEGRANA × Drop | Sprawdziany & Kartkówki 4U",
-            description="> Niestety nic nie **wygrałeś!**",
+            description="> Niestety nic nie **wygrałeś/aś!**",
             color=discord.Color.red()
         )
 
