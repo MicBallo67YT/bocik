@@ -86,7 +86,6 @@ async def drop(interaction: discord.Interaction):
             color=discord.Color.red()
         )
 
-    embed.set_image(url="https://i.imgur.com/QoD8aA5.png")
     await interaction.followup.send(content=f"<@{user_id}>", embed=embed)
 
 # ------------------ EMBED CREATOR MODAL ------------------
