@@ -14,7 +14,7 @@ bot = commands.Bot(command_prefix="do!", intents=intents)
 
 # ------------------ COOLDOWN ------------------
 cooldowns = {}
-COOLDOWN_HOURS = 0
+COOLDOWN_HOURS = 6
 COOLDOWN = timedelta(hours=COOLDOWN_HOURS)
 
 # ------------------ ZAPISANE EMBEDY ------------------
